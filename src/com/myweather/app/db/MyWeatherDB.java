@@ -63,16 +63,17 @@ public class MyWeatherDB {
 	public void saveCity(City city){
 		if(city != null){
 			ContentValues values = new ContentValues();
-			values.put("id", city.getId());
 			values.put("city_name",city.getCityName());
 			values.put("city_code", city.getCityCode());
 			values.put("province_id",city.getProvinceId());
 			db.insert("City", null, values);
+			
 		}
 	}
-	public List<City> loadCity(){
+	public List<City> loadCity(int provinceId){
 		List<City> list = new ArrayList<City>();
-		Cursor cursor = db.query("City", null, null, null, null, null, null);
+		Cursor cursor = db.query("City", null, "province_id = ?",
+				new String[] { String.valueOf(provinceId) }, null, null, null);
 		if(cursor.moveToNext()){
 			do {
 				City city = new City();
@@ -89,7 +90,6 @@ public class MyWeatherDB {
 	public void saveCounty(County county){
 		if(county != null){
 			ContentValues values = new ContentValues();
-			values.put("id", county.getId());
 			values.put("county_name", county.getCountyName());
 			values.put("county_code", county.getCountyCode());
 			values.put("city_id", county.getCityId());
@@ -97,9 +97,10 @@ public class MyWeatherDB {
 		}
 	}
 	
-	public List<County> loadCounty(){
+	public List<County> loadCounty(int cityId){
 		List<County> list = new ArrayList<County>();
-		Cursor cursor = db.query("County", null, null, null, null, null, null);
+		Cursor cursor = db.query("County", null,"city_id = ?",
+				new String[] { String.valueOf(cityId) }, null, null, null);
 		if(cursor.moveToNext()){
 			do {
 				County county = new County();
