@@ -3,6 +3,9 @@ package com.myweather.app.activity;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.youmi.android.AdManager;
+import net.youmi.android.spot.SpotManager;
+
 import com.myweather.app.R;
 import com.myweather.app.R.id;
 import com.myweather.app.R.layout;
@@ -17,7 +20,10 @@ import com.myweather.app.util.Utility;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
@@ -38,9 +44,13 @@ public class ChooseAreaActivity extends Activity {
 	
 	private ProgressDialog progressDialog;
 	private TextView titleText;
+	private TextView levelText;
 	private ListView listview;
 	private ArrayAdapter<String> adapter;
 	private MyWeatherDB myWeatherDB;
+	/**
+	 * 省/市/县名称集合
+	 */
 	private List<String> dataList = new ArrayList<String>();
 	
 	/**
@@ -71,20 +81,42 @@ public class ChooseAreaActivity extends Activity {
 	 * 当前选中的级别
 	 */
 	private int currentLevel;
-	
-	
-	
+	/**
+	 * 是否从weatherActivity中跳转过来
+	 */
+	private boolean isFromWeatherActivity;
+	String appId = "58c58f3254f58e06";
+	String appSecret = "1374474d99ff7a30";
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		isFromWeatherActivity = getIntent().getBooleanExtra("from_weather_activity", false);
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+		//-------------------city_selected有疑问----------------
+		// 已经选择了城市且不是从WeatherActivity跳转过来，才会直接跳转到WeatherActivity
+		Log.i("Log", "city_selected:"+prefs.getBoolean("city_selected", false));
+		Log.i("Log", "isFromWeatherActivity:"+isFromWeatherActivity);
+		//有米广告
+		AdManager.getInstance(this).init(appId,appSecret, false);
+		SpotManager.getInstance(this).loadSpotAds();
+		SpotManager.getInstance(this).setSpotOrientation(
+				SpotManager.ORIENTATION_PORTRAIT);//竖屏显示
+		if(prefs.getBoolean("city_selected", false) && !isFromWeatherActivity){
+			Intent intent = new Intent(this,WeatherActivity.class);
+			startActivity(intent);
+			finish();
+			return;
+		}
+		
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.activity_choose_area);
 		listview = (ListView) findViewById(R.id.list_view);
 		titleText = (TextView) findViewById(R.id.title_text);
+		levelText = (TextView) findViewById(R.id.level_text);
 		adapter = new ArrayAdapter<String>(this, R.layout.choose_area_item,dataList);
 		listview.setAdapter(adapter);
 		myWeatherDB  = myWeatherDB.getInstance(this);
-		
+		levelText.setText("3");
 		listview.setOnItemClickListener(new OnItemClickListener() {
 
 			@Override
@@ -92,42 +124,46 @@ public class ChooseAreaActivity extends Activity {
 					int position, long id) {
 				// TODO Auto-generated method stub
 				if(currentLevel == LEVEL_PROVINCE){
-					Log.i("Log", "进入onItemClick");
-					selectedProvince  = provinceList.get(position);
-					Log.i("Log", "provinceCode:"+selectedProvince.getProvinceCode());
+					levelText.setText("2");
+					selectedProvince = provinceList.get(position);
 					queryCities();
-				}else if (currentLevel == LEVEL_CITY){
+				}else if(currentLevel == LEVEL_CITY){
+					levelText.setText("1");
 					selectedCity = cityList.get(position);
 					queryCounties();
+				}else if(currentLevel == LEVEL_COUNTY){
+					String countyCode = countyList.get(position).getCountyCode();
+					Intent intent = new Intent(ChooseAreaActivity.this,WeatherActivity.class);
+					intent.putExtra("county_code", countyCode);
+					startActivity(intent);
+					finish();
 				}
 			}
-			
 		});
-		queryProvince();
+		queryProvince();//#1 第一次运行,查询信息
 	}
 	/**
-	* 查询所有的省，优先从数据库查询，如果没有查询到再去服务器上查询。
+	* 查询所有的省,优先从数据库查询,如果没有查询到再去服务器上查询.
 	*/
 	public void queryProvince(){
 		provinceList = myWeatherDB.loadProvince();
 		if(provinceList.size() > 0){
-			dataList.clear();
+			dataList.clear();//#6 添加省份名称信息
 			for (Province p : provinceList) {
 				dataList.add(p.getProvinceName());
-				
 			}
 			adapter.notifyDataSetChanged();
 			listview.setSelection(0);
 			titleText.setText("中国");
-			currentLevel = LEVEL_PROVINCE;
+			currentLevel = LEVEL_PROVINCE;//#7 完全显示省份信息
 			
 		}else{
-			queryFromServer(null,"province");
+			queryFromServer(null,"province");//#2 第一次运行无数据,向服务器查询省份信息
 		}
 	}
 	
 	/**
-	* 查询选中省内所有的市，优先从数据库查询，如果没有查询到再去服务器上查询。
+	* 查询选中省内所有的市,优先从数据库查询,如果没有查询到再去服务器上查询.
 	*/
 	private void queryCities() {
 		Log.i("Log", "开始查询城市");
@@ -148,7 +184,7 @@ public class ChooseAreaActivity extends Activity {
 	}
 	
 	/**
-	* 查询选中市内所有的县，优先从数据库查询，如果没有查询到再去服务器上查询。
+	* 查询选中市内所有的县,优先从数据库查询,如果没有查询到再去服务器上查询.
 	*/
 	private void queryCounties() {
 		countyList = myWeatherDB.loadCounty(selectedCity.getId());
@@ -167,15 +203,14 @@ public class ChooseAreaActivity extends Activity {
 	}
 	
 	/**
-	* 根据传入的代号和类型从服务器上查询省市县数据。
+	* 根据传入的代号和类型从服务器上查询省市县数据.
 	*/
 	private void queryFromServer(final String code, final String type) {
 		String address;
 		if(!TextUtils.isEmpty(code)){
-			address =  "http://www.weather.com.cn/data/list3/city" + code +
-					".xml";
+			address = "http://www.weather.com.cn/data/list3/city" + code + ".xml";
 		}else{
-			address = "http://www.weather.com.cn/data/list3/city.xml";
+			address = "http://www.weather.com.cn/data/list3/city.xml";//#3 查询所有省份信息 
 		}
 		showProgressDialog();
 		HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
@@ -183,11 +218,9 @@ public class ChooseAreaActivity extends Activity {
 			@Override
 			public void onFinish(String response) {
 				// TODO Auto-generated method stub
-				Log.i("Log", "Http请求结束");
 				boolean result = false;
 				if("province".equals(type)){
-					result = Utility.handleProvincesResponse(myWeatherDB, response);
-					Log.i("Log", "对Http响应内容进行分析结束");
+					result = Utility.handleProvincesResponse(myWeatherDB, response);//#4 第一次运行,处理请求结果,向数据库中保存省份信息
 				}else if("city".equals(type)){
 					result = Utility.handleCitiesResponse(myWeatherDB, response, selectedProvince.getId());
 					
@@ -195,7 +228,6 @@ public class ChooseAreaActivity extends Activity {
 					result = Utility.handleCountiesResponse(myWeatherDB, response, selectedCity.getId());
 					
 				}
-				Log.i("Log", "Http相应内容进行分析的结果:"+result);
 				if(result){
 					// 通过runOnUiThread()方法回到主线程处理逻辑
 					runOnUiThread(new Runnable() {
@@ -205,7 +237,7 @@ public class ChooseAreaActivity extends Activity {
 							// TODO Auto-generated method stub
 							closeProgressDialog();
 							if("province".equals(type)){
-								queryProvince();
+								queryProvince();//#5  第一次运行显示省份信息
 							}else if("city".equals(type)){
 								queryCities();
 							}else if("county".equals(type)){
@@ -250,16 +282,22 @@ public class ChooseAreaActivity extends Activity {
 		}
 	}
 	/**
-	* 捕获Back按键，根据当前的级别来判断，此时应该返回市列表、省列表、还是直接退出。
+	* 捕获Back按键,根据当前的级别来判断,此时应该返回市列表、省列表、还是直接退出.
 	*/
 	@Override
 	public void onBackPressed() {
 		// TODO Auto-generated method stub
 		if(currentLevel == LEVEL_COUNTY){
 			queryCities();
+			levelText.setText("2");
 		}else if(currentLevel == LEVEL_CITY){
 			queryProvince();
+			levelText.setText("3");
 		}else{
+			if(isFromWeatherActivity){
+				Intent intent = new Intent(this,WeatherActivity.class);
+				startActivity(intent);
+			}
 			finish();
 		}
 	}

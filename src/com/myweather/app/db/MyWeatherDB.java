@@ -3,7 +3,6 @@ package com.myweather.app.db;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.crypto.Cipher;
 
 import com.myweather.app.model.City;
 import com.myweather.app.model.County;
@@ -45,7 +44,7 @@ public class MyWeatherDB {
 		List<Province> list = new ArrayList<Province>();
 		Cursor cursor = db.
 				query("Province", null, null, null, null, null, null);
-		if(cursor.moveToNext()){
+		if(cursor.moveToFirst()){
 			do{
 				Province province = new Province();
 				province.setId(cursor.getInt(cursor.getColumnIndex("id")));
@@ -74,7 +73,7 @@ public class MyWeatherDB {
 		List<City> list = new ArrayList<City>();
 		Cursor cursor = db.query("City", null, "province_id = ?",
 				new String[] { String.valueOf(provinceId) }, null, null, null);
-		if(cursor.moveToNext()){
+		if(cursor.moveToFirst()){
 			do {
 				City city = new City();
 				city.setId(cursor.getInt(cursor.getColumnIndex("id")));
@@ -101,13 +100,13 @@ public class MyWeatherDB {
 		List<County> list = new ArrayList<County>();
 		Cursor cursor = db.query("County", null,"city_id = ?",
 				new String[] { String.valueOf(cityId) }, null, null, null);
-		if(cursor.moveToNext()){
+		if(cursor.moveToFirst()){
 			do {
 				County county = new County();
 				county.setCityId(cursor.getInt(cursor.getColumnIndex("id")));
 				county.setCountyName(cursor.getString(cursor.getColumnIndex("county_name")));
 				county.setCountyCode(cursor.getString(cursor.getColumnIndex("county_code")));
-				county.setCityId(cursor.getInt(cursor.getColumnIndex("city_id")));
+				county.setCityId(cityId);
 				list.add(county);
 			} while (cursor.moveToNext());
 		}

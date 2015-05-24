@@ -15,6 +15,16 @@
             android:layout_centerInParent="true"
             android:textColor="#fff"
             android:textSize="24sp" />
+        
+         <TextView
+            android:id="@+id/level_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:textColor="#fff"
+            android:layout_alignParentBottom="true"
+            android:layout_marginRight="6dp"
+            android:textSize="14sp" />
     </RelativeLayout>
 
     <ListView

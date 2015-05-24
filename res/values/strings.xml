@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">MyWeather</string>
+    <string name="app_name">酷安天气</string>
     <string name="hello_world">Hello world!</string>
-    <string name="action_settings">Settings</string>
-    <string name="title_activity_choose_area">ChooseAreaActivity</string>
+    <string name="action_settings">设置</string>
+    <string name="title_activity_choose_area">酷安天气</string>
+    <string name="title_activity_weather">WeatherActivity</string>
+    <string name="title_activity_setting">SettingActivity</string>
 
 </resources>
