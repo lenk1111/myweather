@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.myweather.app"
+    package="com.lenk.myweather"
     android:versionCode="2"
-    android:versionName="1.0.1" >
+    android:versionName="1.0.2" >
 
     <uses-sdk
         android:minSdkVersion="17"
@@ -13,16 +13,19 @@
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-<uses-permission android:name="android.permission.GET_TASKS" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" /> 
+
 <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-
+	<!-- allowBackup存在漏洞风险 -->
     <application
-        android:allowBackup="true"
+        android:hardwareAccelerated="true"
+        android:allowBackup="false"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
-         <activity
+    <!-- ========================== -->
+    <activity
         android:name="net.youmi.android.AdBrowser"
         android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
         android:theme="@android:style/Theme.Light.NoTitleBar" >
@@ -39,7 +42,7 @@
     </receiver>
 
         <activity
-            android:name="com.myweather.app.activity.ChooseAreaActivity"
+            android:name="com.lenk.myweather.activity.ChooseAreaActivity"
             android:label="@string/title_activity_choose_area" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -48,20 +51,35 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.myweather.app.activity.WeatherActivity"
-            android:label="@string/title_activity_weather" >
+            android:name="com.lenk.myweather.activity.WeatherActivity"
+             android:configChanges="keyboardHidden|orientation"
+            android:screenOrientation="portrait" >
+            <intent-filter>
+                <action android:name="com.sina.weibo.sdk.action.ACTION_SDK_REQ_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
 
-        <service android:name="com.myweather.app.service.AutoUpdateService" >
+        <service android:name="com.lenk.myweather.service.AutoUpdateService" >
         </service>
 
-        <receiver android:name="com.myweather.app.receiver.AutoUpdateReceiver" >
+        <receiver android:name="com.lenk.myweather.receiver.AutoUpdateReceiver" >
         </receiver>
 
         <activity
-            android:name="com.myweather.app.activity.SettingActivity"
+            android:name="com.lenk.myweather.activity.SettingActivity"
             android:label="@string/title_activity_setting" >
         </activity>
+        <!-- 必须注册在微博授权，分享微博时候用到 -->
+        <activity android:name="com.sina.weibo.sdk.component.WeiboSdkBrowser" 
+            android:configChanges="keyboardHidden|orientation"
+            android:windowSoftInputMode="adjustResize"
+            android:exported="false"
+            android:theme="@android:style/Theme.NoTitleBar" 
+            >
+        </activity>
+        <service android:name="com.sina.weibo.sdk.net.DownloadService"
+            android:exported="false"></service>
     </application>
 
 </manifest>
